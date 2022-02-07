@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simple Art </title>
+  <meta name="description" content="Simple Art">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Quicksand&display=swap" rel="stylesheet">
+</head>
+
+<body>
+  <div style="display:flex;justify-content: space-between;">
+    <h1 id="title">Simple Art</h1>
+    <button id="sign-in-button">sign-in-button</button>
+  </div>
+  <div class="main" style="border:1px solid black;padding:30px;margin:20px;">
+      <button id="sign-out-button" class="hide">sign-out-button</button>
+      <div id="art-state"></div>
+      <h1>All Simple Art NFTs</h1>
+      <div id="nft-items"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/near-api-js@0.44.1/dist/near-api-js.min.js"></script>
+  <script id="lzutf8" src="https://cdn.jsdelivr.net/npm/lzutf8/build/production/lzutf8.min.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+
+</html>

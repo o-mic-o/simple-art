@@ -1,0 +1,43 @@
+html, body, header, nav, h1, a,
+ul, li, strong, main, button, i,
+section, img, div, h1, h2, h3, h4, h5, p, form,
+fieldset, label, input, textarea,
+span, article, footer, time, small {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  color: inherit;
+  text-align: inherit;
+  text-decoration: inherit;
+  vertical-align: inherit;
+
+}
+
+.main {
+  padding:30px;
+}
+.hide {
+  display:none;
+}
+body {
+  font-family: 'Quicksand', sans-serif;
+}
+.account-id {
+  font-weight: 800;
+  display:inline-block;
+  color:purple;
+}
+#nft-items {
+  display:flex;
+  flex-wrap: wrap;
+}
+.nft-item{
+  border: 1px solid red;
+  padding:30px;
+  margin-right:5px;
+}
+button {
+  border:3px solid purple;
+  padding:20px;
+}
