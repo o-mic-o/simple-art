@@ -1,3 +1,3 @@
-# Simple Art
+# Simple Art Club
 
-Simple Art
+Simple Art Club
