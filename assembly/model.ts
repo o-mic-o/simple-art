@@ -4,6 +4,7 @@
 import { u128 } from "near-sdk-as";
 import { ContractPromise } from 'near-sdk-as';
 
+// Declares TokenMetadata, based on NEP Standards
 @nearBindgen
 export class TokenMetadata {
   title: string; // ex. "Arch Nemesis: Mail Carrier" or "Parcel #5055"
@@ -20,6 +21,8 @@ export class TokenMetadata {
   reference_hash: string; // Base64-encoded sha256 hash of JSON from reference field. Required if `reference` is included.
 }
 
+
+// Declares Token, based on NEP Standards
 @nearBindgen
 export class Token {
   id: string;
@@ -32,6 +35,7 @@ export class Token {
   }
 }
 
+/*
 @nearBindgen
 export class SimpleArtToken {
   token: Token;
@@ -59,53 +63,150 @@ export class SimpleArtToken {
     return ContractPromise.create('', '', {}, 1);
   }
 }
+*/
 
+// Order type, used for mapping and guiding the simple market
 @nearBindgen
 export class Order {
   token_id: string;
-  metadata: TokenMetadata;
-  sale_price_history: Array<u128>;
-  sale_date_history: Array<u64>;
-  owners_history: Array<string>;
-
   forSale: boolean;
   price_for_sale: u128;
+  current_owner: string;
+  original_creator: string;
+
+  history_action_type: Array<string>;
+  history_timestamp: Array<string>;
+  history_price: Array<string>;
+  history_owner_acted: Array<string>;
+
+  this_order_royalties_earned: u128;
+  favourited_by_users: Array<string>;
 
   constructor(token_id: string, current_owner: string) {
-    this.token_id = token_id
+    this.token_id = token_id;
     this.forSale = false;
-    this.owners_history = new Array<string>();
-    this.sale_price_history = new Array<u128>();
-    this.sale_date_history = new Array<u64>();
-    this.owners_history.push(current_owner);
+    this.current_owner = current_owner;
+    this.original_creator = current_owner;
+    this.history_action_type = new Array<string>();
+    this.history_timestamp = new Array<string>();
+    this.history_price = new Array<string>();
+    this.history_owner_acted = new Array<string>();
+    this.this_order_royalties_earned = u128.from("0");
+    this.favourited_by_users = new Array<string>();
   }
-  setItemForSale(price: u128): void {
+
+  //Used to initialize the favourites of users, used for upgraded deployment
+  initialize_favourited_by_users(): void {
+    this.favourited_by_users = new Array<string>();
+  };
+
+  //Set a favourite (like) method
+  set_favourite(owner_that_wants_to_make_this_favourited: string): void {
+    this.favourited_by_users.push(owner_that_wants_to_make_this_favourited);
+  };
+
+  //Un-favourite an item
+  remove_my_favourite(owner_that_wants_to_remove_favourite: string): void {
+    let indexToRemove = -1;
+    for (let i = 0; i < this.favourited_by_users.length; i++) {
+      if (this.favourited_by_users[i] == owner_that_wants_to_remove_favourite) {
+        indexToRemove = i;
+        break;
+      }
+    }
+    if (indexToRemove != -1) {
+      this.favourited_by_users.splice(indexToRemove, 1);
+    }
+  };
+
+  // Create a "mint" action, saved in the history of the item all on-chain
+  mintAction(block_timestamp: string): void {
+    this.history_action_type.push("mint");
+    this.history_timestamp.push(block_timestamp);
+    this.history_price.push("");
+    this.history_owner_acted.push(this.current_owner);
+  };
+
+  // Set an order to be for sale, and create a "list" action in the history
+  setItemForSale(price: u128, block_timestamp: string): void {
     this.forSale = true;
     this.price_for_sale = price;
-  }
 
-  updateItemForSale(is_for_sale: boolean, price: u128): void {
-    this.forSale = is_for_sale;
-    this.price_for_sale = price;
-  }
+    this.history_action_type.push("list");
+    this.history_timestamp.push(block_timestamp);
+    this.history_price.push(price.toString());
+    this.history_owner_acted.push("");
+  };
 
-  setWasSoldHistory(price_sold_at: u128, sale_history_block_index: u64, new_owner: string): void {
-    this.sale_price_history.push(price_sold_at);
-    this.sale_date_history.push(sale_history_block_index);
-    this.owners_history.push(new_owner);
+  // Set an order to be filled, with a new owner, and set a "buy" action
+  order_was_filled(price_sold_at: u128, sale_history_block_timestamp: string, new_owner: string): void {
+    this.current_owner = new_owner;
+
+    this.history_action_type.push("buy");
+    this.history_timestamp.push(sale_history_block_timestamp);
+    this.history_price.push(price_sold_at.toString());
+    this.history_owner_acted.push(new_owner);
+
     this.forSale = false;
-  }
+  };
+
+  // Cancel an item for sale status, and create a "cancel" action
+  cancelItemForSale(block_timestamp: string): void {
+    this.forSale = false;
+
+    this.history_action_type.push("cancel");
+    this.history_timestamp.push(block_timestamp);
+    this.history_price.push("");
+    this.history_owner_acted.push("");
+  };
+
+  // Increase the royalty counter for the artist royalty for this item's order
+  increase_this_order_royalites_earned(incoming_increase: u128): void {
+    this.this_order_royalties_earned = u128.add(this.this_order_royalties_earned, incoming_increase)
+  };
 }
 
+// Full system state, which includes various counters and royalty information
 @nearBindgen
 export class SimpleArtState {
-  mint_count: u128;
+  mint_count: u64;
+  artist_count: u64;
+  mint_donation_cost: u128;
+
+  market_royalty_percent: u128;
+  creator_royalty_percent: u128;
+
+  system_earned: u128;
+  market_volume: u128;
+  creators_royalties_earned: u128;
 
   constructor() {
-    this.mint_count = u128.from("0");
+    this.mint_count = 0;
+    this.mint_donation_cost = u128.from("1000000000000000000000000");
+    this.market_royalty_percent = u128.from("3");
+    this.creator_royalty_percent = u128.from("6");
+    this.system_earned = u128.from("0");
+    this.market_volume = u128.from("0");
+    this.creators_royalties_earned = u128.from("0");
   }
 
-  increase_mint_count() : void {
-    this.mint_count = u128.add(this.mint_count, u128.from("1"));
+  increase_mint_count(): void {
+    this.mint_count = this.mint_count + 1;
+  }
+
+  increase_system_earned(incoming_earned: u128): void {
+    this.system_earned = u128.add(this.system_earned, incoming_earned)
+  }
+
+  increase_market_volume(incoming_increase: u128): void {
+    this.market_volume = u128.add(this.market_volume, incoming_increase)
+  }
+
+  increase_artist_count(): void {
+    this.artist_count += 1;
+  }
+
+  increase_creator_royalites_earned(incoming_increase: u128): void {
+    this.creators_royalties_earned = u128.add(this.creators_royalties_earned, incoming_increase)
   }
 }

@@ -4,28 +4,208 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Simple Art </title>
-  <meta name="description" content="Simple Art">
+  <title>Simple Art Club</title>
+  <meta name="description" content="Simple Art Club">
   <link rel="stylesheet" href="css/styles.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Quicksand&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="favicons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicons/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="favicons/favicon-16x16.png">
+  <link rel="manifest" href="favicons/site.webmanifest">
+  <link rel="mask-icon" href="favicons/safari-pinned-tab.svg" color="#5bbad5">
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="theme-color" content="#ffffff">
+
 </head>
 
 <body>
-  <div style="display:flex;justify-content: space-between;">
-    <h1 id="title">Simple Art</h1>
-    <button id="sign-in-button">sign-in-button</button>
+  <div id="loading-screen" class="hide flex-container">
+    <div class="row">
+      <div class="flex-item main-title">Simple Art Club</div>
+      <div id="loading-message" class="flex-item main-button-non-focus">Loading...</div>
+    </div>
   </div>
-  <div class="main" style="border:1px solid black;padding:30px;margin:20px;">
-      <button id="sign-out-button" class="hide">sign-out-button</button>
-      <div id="art-state"></div>
-      <h1>All Simple Art NFTs</h1>
-      <div id="nft-items"></div>
+
+  <div id="error-notification" class="hide">
+    <div class="flex justify-content-start">
+      <div class="flex justify-content-start">
+        <div id="display-avatar-canvas"></div>
+        <div class="group">
+        </div>
+      </div>
+    </div>
+    <div id="display-error-texts">
+      <h3>An error occured. Please report this on discord</h3>
+    </div>
+  </div>
+
+  <div id="explore-container" class="flex">
+    <div id="explore" class="flex-item  main-button-non-focus" style="width:100%;text-align: center;">Explore</div>
+  </div>
+
+  <div id="intro-container" class="flex-container">
+    <div class="row">
+      <div id="title" class="flex-item main-title">Simple Art Club</div>
+      <div class="first-description flex-item main-description">Create and share limited edition pixel art on NEAR</div>
+      <div id="sign-in-button" class="flex-item main-button-non-focus">Loading...</div>
+      <!--<div id="" class="flex-item main-button-non-focus">Explore simple art</div>-->
+      <div id="my-art" class="hide flex-item main-button">Profile</div>
+      <div id="my-gallery-view" class="hide flex-item main-button-yellow">Gallery</div>
+      <div id="create-art" class="hide flex-item main-button" style="background-color:lightgreen">Mint</div>
+      <div id="simple-stats" class="hide flex-item main-button" style="background-color:rgb(149, 171, 238)">Stats</div>
+      <div id="about" style="margin-top:10px;" class="hide flex-item main-button-yellow">About</div>
+      <div id="sign-out-button" class="flex-item hide main-button-exit">Logout</div>
+    </div>
+  </div>
+  <div style="display:flex;justify-content: space-between;">
+  </div>
+  <div id="about-simple-art-club" class="hide main">
+    <h1 class="sm-regular-padding main-title">What is Simple Art Club?</h1>
+    <div class="main-description description-padding">The club for simple art connoisseurs.</div>
+    <h1 class="sm-regular-padding main-title">What can this do?</h1>
+    <div class="main-description description-padding">Create your own Art NFTs to display, share, and earn.</div>
+    <h1 class="sm-regular-padding main-title">Discord?</h1>
+    <h1 class="description-padding main-description">Yes! <a href="https://discord.gg/6TMX8jNpP2" class="owner-link"
+        style="padding:0;" target="_blank">Join our discord!</a></h1>
+    <h1 class="sm-regular-padding main-title">Supply information</h1>
+    <div class="main-description description-padding">There is a maximum amount of Simple Art Pixel NFTs to be created,
+      up to 10000.</div>
+    <h1 class="sm-regular-padding main-title">Creation Donation Cost</h1>
+    <div class="main-description description-padding">When creating, a donation amount is applied to help further
+      development.</div>
+    <h1 class="sm-regular-padding main-title">Creator Royalty</h1>
+    <div class="main-description description-padding">All creators earn 6% royalty forever on sales of their creations.
+    </div>
+    <h1 class="sm-regular-padding main-title">Simple Art Club Royalty</h1>
+    <div class="main-description description-padding"> Simple Art Club earns 3% royalty on sales to help further
+      development.</div>
+
+    <h1 class="sm-regular-padding main-title">Roadmap</h1>
+
+    <ul class="roadmap-list">
+      <li><b>Completed:</b></li>
+      <li>&#x2713; Minting feature for NFTs.</li>
+      <li>&#x2713; Gallery view links for sharing.</li>
+      <li>&#x2713; Profile view links for sharing.</li>
+      <li>&#x2713; Explore sorting.</li>
+      <li>&#x2713; About release.</li>
+      <li>&#x2713; Ranking release.</li>
+      <li>&#x2713; Royalites functionality.</li>
+      <li>&#x2713; Simple market orders.</li>
+      <li>&#x2713; Order history.</li>
+      <li>&#x2713; Roadmap release.</li>
+      <li>&#x2713;Add likes feature.</li>
+
+      <li style="padding-top:30px;"><b>To do:</b></li>
+      <li>NFT transfer functionality.</li>
+      <li>Add moderation feature on-chain to keep things family friendly.</li>
+      <li>Extensive testing before mainnet.</li>
+      <li>Launch Simple Art Club on Mainnet!</li>
+      <li>Exclusive Discord Channels for holders.</li>
+      <li>Presence in the metaverse.</li>
+    </ul>
+
+    <h1 class="sm-regular-padding main-title">Membership Ranks</h1>
+    <ul class="roadmap-list">
+      <li><b>Collectors Ranks:</b></li>
+      <li><b>1</b> Simple Conoisseur</li>
+      <li><b>3</b> Retro Conoisseur</li>
+      <li><b>5</b> Special Conoisseur</li>
+      <li><b>10</b> High Council Conoisseur</li>
+      <li><b>25+</b> Gatekeeper of the High Council Connoisseur</li>
+      <li style="padding-top:30px;"><b>Creator Ranks:</b></li>
+      <li><b>1</b> Simple Artist</li>
+      <li><b>3</b> Retro Artist</li>
+      <li><b>5</b> Special Artist</li>
+      <li><b>10</b> High Council Artist</li>
+      <li><b>25+</b> Gatekeeper of the High Council Artist</li>
+    </ul>
+
+  </div>
+
+  <div id="simple-art-club-stats" class="hide main">
+    <div class="sm-regular-padding main-title">Simple Art Club Stats</div>
+    <div class="sm-regular-padding" id="current-stats"></div>
+  </div>
+  <div id="explore-nfts" class="hide main">
+    <h1 class="sm-regular-padding main-title">Simple Art Club <div id="art-state"></div>
+    </h1>
+    <div id="sorting-container">
+      <div id="mint-ids-sort-market" class="sorters main-button">Mint &#x2193;</div>
+      <div id="price-sort-market" class="sorters main-button">Price &#x2192;</div>
+      <div id="show-hide-not-for-sale" class="sorters main-button">Hide not for sale</div>
+      <div id="favourites-sort" class="sorters main-button">Likes &#x2192;</div>
+    </div>
+    <div id="nft-items" class="nft-items"></div>
+  </div>
+  <div id="explore-my-nfts" class="hide main">
+    <h1 id="my-title" class="sm-regular-padding main-title"></h1>
+    <div id="my-count" class="main-description subtitle-padding"></div>
+    <div id="my-nft-items" class="nft-items"></div>
+    <h1 id="my-creations-title" class="sm-regular-padding hide main-title">Creations</h1>
+    <div id="my-creations-count" class="main-description subtitle-padding"></div>
+    <div id="my-nft-creations" class="nft-items"></div>
+
+    <h1 id="my-favourites-title" class="sm-regular-padding hide main-title">Liked</h1>
+    <div id="my-favourites-count" class="main-description subtitle-padding"></div>
+    <div id="my-nft-favourites" class="nft-items"></div>
+
+  </div>
+  <div id="explore-this-nft" class="hide main">
+    <h1 id="my-title" class="sm-regular-padding main-title">Explore this nft</h1>
+    <!--<div id="this-nft-count" class="main-description subtitle-padding"></div>-->
+    <div id="this-nft-item" class="nft-items"></div>
+  </div>
+  <div id="mint-nft" class="hide main">
+    <h1 class="sm-regular-padding main-title">Create NFT</h1>
+    <div class="main-description subtitle-padding">Mint an NFT to share your pixel creation!</div>
+
+    <div id="nft-creator" class="faq-section clearfix">
+      <div style="padding:0 0 10px 0;">
+        <div class="title" id="design-and-mint">Choose your Public title:</div>
+        <input id="new-nft-description" type="text" placeholder="Enter public title for your NFT..." maxlength="60">
+      </div>
+      <div style="display:flex;padding:0 0 10px 0;">
+        <div>
+          <div class="title" id="design-and-mint">Colour</div>
+          <input type="color" id="colour-selector" value="#ff0000" title="Choose a colour">
+        </div>
+        <div>
+          <div class="title" id="design-and-mint">Paint</div>
+          <div id="paint-selector"><i class="fa fa-paint-brush"></i></div>
+        </div>
+        <div>
+          <div class="title" id="design-and-mint">Eraser</div>
+          <div id="eraser-selector"><i class="fa fa-eraser"></i></div>
+        </div>
+      </div>
+
+      <div class="clearfix">
+        <div id="nft-canvas" class="clearfix"></div>
+        <div class="renderer-box">
+          <div id="nft-renderer" class="clearfix"></div>
+        </div>
+      </div>
+
+
+      <div class="group" style="flex-direction: column;clear:both">
+        <div id="mint-character-button" class="main-button">Donate to mint NFT for 1 N</div>
+      </div>
+      <div class="main-description mint-description-padding"><b>Note:</b> Sexual, racist or violent drawings are not
+        allowed, and will be blocked. There are no refunds for donations.</div>
+    </div>
+
+
+    <div id="my-nft-items" style="padding:0 0 0 30px"></div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/near-api-js@0.44.1/dist/near-api-js.min.js"></script>
   <script id="lzutf8" src="https://cdn.jsdelivr.net/npm/lzutf8/build/production/lzutf8.min.js"></script>
+  <script src="js/dom2image.js"></script>
   <script src="js/app.js"></script>
 
 </body>
