@@ -159,10 +159,31 @@ body {
 .hide {
   display:none;
 }
-#art-state{
+#art-state, .mint-status{
   display:inline-block;
   font-size:24px;
   margin-left:10px;
+}
+#nft-creator-display-box {
+  display:flex;padding:0 0 10px 0;
+}
+#nft-creator-display-box.hide, #nft-canvas-display-box.hide, #nft-button-display-box.hide, #nft-note-display-box.hide {
+  display:none;
+}
+#mint-whitelisted-response{
+  font-weight: bold;
+}
+#mint-whitelisted-response.green, .green {
+  color:green;
+}
+.bold {
+  font-weight: bold;
+}
+#mint-whitelisted-response.red, .red {
+  color:lightcoral;
+}
+#explore-title{
+  display:inline-block;
 }
 .account-id {
   font-weight: 800;
@@ -204,6 +225,8 @@ body {
   text-align: center;
   padding:20px 0 20px 0;
   font-weight: bold;
+  word-break:break-word;
+  width:300px;
 }
 .sm-regular-padding {
    padding:30px 30px 10px 30px;
@@ -218,8 +241,9 @@ body {
   padding:30px 0 30px 0;
 }
 #current-stats{
-  width:50%;
+  width:70%;
 }
+
 .nft-image {
   border-radius: 30px;
   cursor: pointer;
@@ -255,12 +279,18 @@ body {
   color:black;
   border-bottom:1px dotted black;
 }
-#set-price{
-  border:3px solid lightgreen;
+#set-new-owner, #set-discord-owner-link {
+  width:100%;
+}
+#set-price, #set-new-owner, #set-discord-owner-link{
+  border:1px solid black;
   border-radius: 20px;
   padding:10px;
   font-size:24px;
   text-indent: 10px;
+}
+#set-discord-owner-link{
+  margin-top:15px;
 }
 .listing-details-title {
   margin-bottom:10px;
@@ -281,20 +311,24 @@ body {
   cursor:pointer;
   font-weight: 300;
   padding:20px;
-  text-align: center;
+  text-align: left;
   font-size:20px;
   color:black;
   margin-bottom:10px;
 }
 .dotted-top {
-  /*margin-top:40px;*/
   border-top:1px dotted black;
 }
+.history-show-more {
+  cursor:pointer;
+  padding:20px 0 0 0;
+}
+.history-show-more:hover {
+  opacity: 0.8;
+}
 .sync-this-item{
-  border-top:1px dotted black;
   padding:20px 0 0 0;
   border-radius: 0;
-  background-color: transparent;
 }
 .sync-this-item:hover {
   opacity: 0.8;
@@ -308,7 +342,7 @@ body {
 .is-for-sale:hover {
   opacity: 0.8;
 }
-.favourite-this-item {
+.favourite-this-item, .request-discord-rank {
   font-weight: 800;
   background-color:lightblue;
   padding:20px;
@@ -317,6 +351,12 @@ body {
   font-size:24px;
   color:black;
   cursor: pointer;
+}
+.request-discord-rank {
+  margin-top:15px;
+}
+.request-discord-rank:hover {
+  opacity: 0.8;
 }
 .favourite-this-item.remove-favourite {
   background-color:rgb(255, 210, 128);
@@ -371,33 +411,37 @@ body {
 border-color:red;
 background-color: rgba(255,0,0,0.3);
 }
-#nft-canvas {
-  width:90%;
+#nft-canvas, #nft-canvas-for-dao {
+  width:60%;
   cursor:cell;
   touch-action: none;
 }
-
-#nft-renderer {
+.editor-box {
+  display:flex;
+}
+#nft-renderer, #nft-renderer-for-dao {
   width:300px;
   height:300px;
   background-color: white;
 }
 
 .renderer-box {
-  margin:30px 0 30px 0;
+  margin:0px 0px 30px 30px;
   padding:50px;
   background-color:lightgray;
   border-radius: 30px;
   line-height: 0;
   float:left;
+  height:400px;
 }
+option {color:green;}
 
 #new-nft-description {
   margin-top:10px;
-   border:5px solid lightblue;
+   border:1px solid black;
    border-radius: 20px;
    width:100%;
-   padding:30px;
+   padding:10px;
    width:300px;
    font-family: 'Quicksand', sans-serif;
    font-size: 16px;
@@ -406,8 +450,18 @@ background-color: rgba(255,0,0,0.3);
 .sorters.main-button{
   background-color:lightcyan;
   text-transform: none;
+  font-weight:700;
+  font-size:18px;
 }
-#mint-character-button, .sorters {
+.sorters {
+  text-align: center;
+  padding:10px;
+  margin:0;
+}
+#mint-character-button{
+  background-color:lightcyan;
+}
+#mint-character-button, #mint-character-button-for-dao {
   width:550px;
   text-align: center;
   padding:20px;
@@ -423,16 +477,30 @@ background-color: rgba(255,0,0,0.3);
    margin-right:10px;
  }
 
-#nft-creator{
+#nft-creator, #nft-creator-for-dao {
   margin:0 0 0 30px;
   padding-bottom:100px;
 }
 
-#colour-selector{
+#mint-variant-watcher{
+  padding:10px;
+  border-radius: 10px;
+  margin-top:10px;
+}
+
+#mint-explore-watcher, #mint-variant-watcher{
+  padding:10px;
+  border-radius: 10px;
+  margin-left:30px;
+  background-color:lightcyan;
+  font-weight:bold;
+}
+
+#colour-selector, #colour-selector-for-dao{
   width:100px;
   height:100px;
 }
-#eraser-selector, #paint-selector{
+#eraser-selector, #paint-selector, #save-selector, #restore-selector {
   border-radius: 20px;
   cursor:pointer;
   margin-left:5px;
@@ -447,13 +515,21 @@ background-color: rgba(255,0,0,0.3);
 #eraser-selector.selected, #paint-selector.selected {
   background-color:yellow;
 }
-#eraser-selector:hover, #paint-selector:hover{
+#eraser-selector:hover, #paint-selector:hover {
   background-color:yellow;
 }
-#eraser-selector i {
+#save-selector:hover, #restore-selector:hover {
+  background-color:lightgreen;
+}
+#eraser-selector i, #paint-selector i, #save-selector i {
   font-size:30px;
 }
-
+#nft-items .nft-description {
+  /*white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 300px;*/
+}
 .nft-items{
   padding:0 0 0 30px;
 }
@@ -489,13 +565,19 @@ background-color: rgba(255,0,0,0.3);
   margin: 0px 0 20px 0;
 }
 
+.nft-item.loading-hide {
+  display:none;
+}
 
 @media screen and (max-width: 1200px){
+  #mint-explore-watcher, #mint-variant-watcher{
+    margin-left:10px;
+  }
   .main-button.sorters {
     width:auto;
     margin:5px;
   }
-  #mint-character-button {
+  #mint-character-button, #mint-character-button-for-dao {
     width:auto;
   }
   .nft-image {
@@ -510,10 +592,10 @@ background-color: rgba(255,0,0,0.3);
   .history-list li {
     padding:5px 0 5px 0;
   }
-  #set-price{
+  #set-price, #set-new-owner, #set-discord-owner-link{
     width:100%;
   }
-  #nft-canvas{
+  #nft-canvas, #nft-canvas-for-dao{
     width:90%;
   }
   .main-button, .main-button-exit, .main-button-yellow, .main-button, .main-button-non-focus {
@@ -548,6 +630,7 @@ background-color: rgba(255,0,0,0.3);
   .nft-item{
     padding:10px;
   }
+
   .nft-image{
     width:70%;
   }
@@ -567,23 +650,28 @@ background-color: rgba(255,0,0,0.3);
 }
 
 @media screen and (max-width: 900px){
+  .editor-box{
+    display:block;
+  }
   #nft-creator {
     margin:0 0 0 10px;
     padding-bottom:100px;
   }
-  .mint-character-button{
+  #mint-character-button{
     width:100%;
   }
   #current-stats{
     width:100%;
   }
   .renderer-box{
-    padding:10px;
+    padding:0;
+    margin-top:30px;
+    height:300px;
   }
  .nft-image{
     width:70%;
   }
-    .nft-item-details {
+  .nft-item-details {
     width:100%;
   }
   .nft-item{

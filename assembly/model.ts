@@ -81,6 +81,9 @@ export class Order {
 
   this_order_royalties_earned: u128;
   favourited_by_users: Array<string>;
+  is_blocked: boolean;
+
+  variant_type: string;
 
   constructor(token_id: string, current_owner: string) {
     this.token_id = token_id;
@@ -93,20 +96,29 @@ export class Order {
     this.history_owner_acted = new Array<string>();
     this.this_order_royalties_earned = u128.from("0");
     this.favourited_by_users = new Array<string>();
+    this.is_blocked = false;
+    this.variant_type = "";
   }
 
-  //Used to initialize the favourites of users, used for upgraded deployment
-  initialize_favourited_by_users(): void {
-    this.favourited_by_users = new Array<string>();
+  set_variant_type(incoming_variant_type: string) : void {
+    this.variant_type = incoming_variant_type;
   };
 
+  initialize_is_blocked() : void {
+    this.is_blocked = false;
+  }
+
+  set_is_blocked() : void {
+    this.is_blocked = true;
+  }
+
   //Set a favourite (like) method
-  set_favourite(owner_that_wants_to_make_this_favourited: string): void {
+  set_favourite(owner_that_wants_to_make_this_favourited: string) : void {
     this.favourited_by_users.push(owner_that_wants_to_make_this_favourited);
   };
 
   //Un-favourite an item
-  remove_my_favourite(owner_that_wants_to_remove_favourite: string): void {
+  remove_my_favourite(owner_that_wants_to_remove_favourite: string) : void {
     let indexToRemove = -1;
     for (let i = 0; i < this.favourited_by_users.length; i++) {
       if (this.favourited_by_users[i] == owner_that_wants_to_remove_favourite) {
@@ -120,7 +132,7 @@ export class Order {
   };
 
   // Create a "mint" action, saved in the history of the item all on-chain
-  mintAction(block_timestamp: string): void {
+  mintAction(block_timestamp:string) : void {
     this.history_action_type.push("mint");
     this.history_timestamp.push(block_timestamp);
     this.history_price.push("");
@@ -151,13 +163,24 @@ export class Order {
   };
 
   // Cancel an item for sale status, and create a "cancel" action
-  cancelItemForSale(block_timestamp: string): void {
+  cancelItemForSale(block_timestamp: string) : void {
     this.forSale = false;
 
     this.history_action_type.push("cancel");
     this.history_timestamp.push(block_timestamp);
     this.history_price.push("");
     this.history_owner_acted.push("");
+  };
+
+  itemWasTransferred(new_owner: string, block_timestamp: string): void {
+    this.forSale = false;
+
+    this.history_action_type.push("transfer");
+    this.history_timestamp.push(block_timestamp);
+    this.history_price.push("");
+    this.history_owner_acted.push(this.current_owner);
+
+    this.current_owner = new_owner;
   };
 
   // Increase the royalty counter for the artist royalty for this item's order
@@ -175,38 +198,223 @@ export class SimpleArtState {
 
   market_royalty_percent: u128;
   creator_royalty_percent: u128;
+  creator_dao_royalty_percent: u128;
 
   system_earned: u128;
   market_volume: u128;
   creators_royalties_earned: u128;
+  dao_royalties_earned: u128;
+
+  system_moved_to_vault: u128;
+
+  max_nfts_for_mint_variants: Array<u64>;
+  mint_variants: Array<string>;
+  mint_counts_for_variants: Array<u64>;
+
+  mint_for_variant_donation_cost: Array<u128>;
+
+  mint_variant_whitelistings: string[][];
+  mint_variant_mint_number_counting: u64[][];
+  mint_variant_mint_maximum_amount: Array<u64>;
+
+  system_owners: Array<string>;
 
   constructor() {
+    this.system_owners = ["mic.testnet", "simpleartclub.testnet"];
+
     this.mint_count = 0;
-    this.mint_donation_cost = u128.from("1000000000000000000000000");
+    this.mint_donation_cost = u128.from("3000000000000000000000000");
+
     this.market_royalty_percent = u128.from("3");
     this.creator_royalty_percent = u128.from("6");
+    this.creator_dao_royalty_percent = u128.from("6");
     this.system_earned = u128.from("0");
     this.market_volume = u128.from("0");
     this.creators_royalties_earned = u128.from("0");
+    this.dao_royalties_earned = u128.from("0");
+
+    this.system_moved_to_vault = u128.from("0");
+
+    this.max_nfts_for_mint_variants = [1000, 500, 1000, 30, 300];
+    this.mint_variants = ["simpleartclub.testnet", "rare.sputnikv2.testnet", "community.sputnikv2.testnet", "chaintyping.testnet", "jellycottage.testnet"];
+    this.mint_counts_for_variants = [0,0,0,0,0];
+    this.mint_for_variant_donation_cost = [u128.from("250000000000000000000000"), u128.from("250000000000000000000000"), u128.from("100000000000000000000000"), u128.from("1000000000000000000000"), u128.from("50000000000000000000000")];
+    this.mint_variant_whitelistings = [[], [], [], [], []];
+    this.mint_variant_mint_number_counting = [[], [], [], [], []];
+    this.mint_variant_mint_maximum_amount = [0, 1, 0, 1, 0];
   }
 
-  increase_mint_count(): void {
+  /*initialize_nft_variants(): void {
+    this.max_nfts_for_mint_variants = [1000, 500, 1000, 30, 300];
+    this.mint_variants = ["simpleartclub.testnet", "rare.sputnikv2.testnet", "community.sputnikv2.testnet", "chaintyping.testnet", "jellycottage.testnet"];
+    this.mint_counts_for_variants = [0, 0, 0, 0, 0];
+    this.mint_for_variant_donation_cost = [u128.from("250000000000000000000000"), u128.from("250000000000000000000000"), u128.from("100000000000000000000000"), u128.from("1000000000000000000000"), u128.from("50000000000000000000000")];
+    this.mint_variant_whitelistings = [[], [], [], [], []];
+    this.mint_variant_mint_number_counting = [[], [], [], [], []];
+    this.mint_variant_mint_maximum_amount = [0, 1, 0, 1, 0];
+  };*/
+
+
+  add_system_owner(incoming_new_system_owner: string) : void {
+    this.system_owners.push(incoming_new_system_owner);
+  };
+
+ /*initialize_dao_royalties() : void {
+    this.dao_royalties_earned = u128.from("0");
+    this.creator_dao_royalty_percent = u128.from("6");
+    this.mint_variants = ["simpleartclub.testnet", "rare.sputnikv2.testnet", "community.sputnikv2.testnet", "chaintyping.testnet", "jellycottage.testnet"];
+  };*/
+
+  is_on_this_variant_whitelist(incoming_variant_name: string, incoming_to_check_on_whitelist: string) : boolean {
+    let index_to_find = -1;
+    for (let i = 0; i < this.mint_variants.length; i++) {
+      if (this.mint_variants[i] == incoming_variant_name) {
+        index_to_find = i;
+        break;
+      }
+    }
+
+    if (index_to_find != -1) {
+      if (this.mint_variant_whitelistings[index_to_find].length == 0) { return true; }
+
+      for (let k = 0; k < this.mint_variant_whitelistings[index_to_find].length; k++) {
+        if (this.mint_variant_whitelistings[index_to_find][k] == incoming_to_check_on_whitelist) {
+          return true;
+        }
+      }
+
+      return false;
+
+    } else {
+      return false;
+    }
+  };
+
+  initiate_or_append_this_variant_whitelisting(incoming_variant_to_find: string, incoming_whitelist_array_of_strings: Array<string>, is_initiate: boolean) : void {
+    let index_to_find = -1;
+    for (let i = 0; i < this.mint_variants.length; i++) {
+      if (this.mint_variants[i] == incoming_variant_to_find) {
+        index_to_find = i;
+        break;
+      }
+    }
+
+
+    if (is_initiate) {
+      this.mint_variant_mint_number_counting[index_to_find] = [];
+    }
+
+    for (let k = 0; k < incoming_whitelist_array_of_strings.length; k++) {
+      this.mint_variant_whitelistings[index_to_find].push(incoming_whitelist_array_of_strings[k]);
+      this.mint_variant_mint_number_counting[index_to_find].push(0);
+    }
+
+  };
+
+
+  get_this_nft_variant_index(incoming_variant_to_find: string) : i32 {
+    let index_to_find = -1;
+    for (let i = 0; i < this.mint_variants.length; i++) {
+      if (this.mint_variants[i] == incoming_variant_to_find) {
+        index_to_find = i;
+        break;
+      }
+    }
+
+    return index_to_find;
+  };
+
+  get_this_mint_count_number_for_whitelisted_user(this_index_of_variant: i32, incoming_to_check_on_whitelist: string): u64 {
+
+    if (this.mint_variant_whitelistings[this_index_of_variant].length == 0) {
+      return -2;
+    }
+
+    for (let k = 0; k < this.mint_variant_whitelistings[this_index_of_variant].length; k++) {
+      if (this.mint_variant_whitelistings[this_index_of_variant][k] == incoming_to_check_on_whitelist) {
+        return this.mint_variant_mint_number_counting[this_index_of_variant][k];
+      }
+    }
+
+    return -1;
+
+  };
+
+
+  increase_mint_variant_mint_number_counting_for_whitelisted_user(this_index_of_variant: i32, incoming_to_check_on_whitelist: string) : boolean {
+
+    if (this.mint_variant_whitelistings[this_index_of_variant].length == 0) {
+      return false;
+
+    } else {
+
+      let this_index_to_find = -1;
+      for (let k = 0; k < this.mint_variant_whitelistings[this_index_of_variant].length; k++) {
+        if (this.mint_variant_whitelistings[this_index_of_variant][k] == incoming_to_check_on_whitelist) {
+          this_index_to_find = k;
+        }
+      }
+
+      if (this_index_to_find == -1) {
+        return false;
+      } else {
+        this.mint_variant_mint_number_counting[this_index_of_variant][this_index_to_find] = this.mint_variant_mint_number_counting[this_index_of_variant][this_index_to_find] + 1;
+        return true;
+      }
+
+    }
+
+  };
+
+  increase_variant_mint_count(this_index_of_variant: i32) : void {
+    this.mint_counts_for_variants[this_index_of_variant] = this.mint_counts_for_variants[this_index_of_variant] + 1;
+  };
+
+  add_new_variant(incoming_variant_name: string, incoming_variant_max_nfts: u64, incoming_variant_mint_donation_cost: string, incoming_variant_mint_max_per_user: u64) : void {
+    //Should set to 0 for incoming_variant_mint_max_per_user if wanting any amount! This is asserted on index.ts under nft_mint()
+    this.mint_variants.push(incoming_variant_name);
+    this.max_nfts_for_mint_variants.push(incoming_variant_max_nfts);
+    this.mint_counts_for_variants.push(0);
+    this.mint_for_variant_donation_cost.push(u128.from(incoming_variant_mint_donation_cost));
+    this.mint_variant_whitelistings.push([]);
+    this.mint_variant_mint_number_counting.push([]);
+    this.mint_variant_mint_maximum_amount.push(incoming_variant_mint_max_per_user);
+  };
+
+  modify_variant_limit(this_index_of_variant: i32, incoming_variant_max: u64) : void {
+    this.max_nfts_for_mint_variants[this_index_of_variant] = incoming_variant_max;
+  };
+
+  modify_variant_mint_price(this_index_of_variant: i32, incoming_mint_price: u128) : void {
+    this.mint_for_variant_donation_cost[this_index_of_variant] = incoming_mint_price;
+  };
+
+
+  increase_system_moved_to_vault(incoming_moved: u128) : void {
+    this.system_moved_to_vault = u128.add(this.system_moved_to_vault, incoming_moved);
+  }
+
+  increase_mint_count() : void {
     this.mint_count = this.mint_count + 1;
   }
 
-  increase_system_earned(incoming_earned: u128): void {
+  increase_system_earned(incoming_earned: u128) : void {
     this.system_earned = u128.add(this.system_earned, incoming_earned)
   }
 
-  increase_market_volume(incoming_increase: u128): void {
+  increase_market_volume(incoming_increase: u128) : void {
     this.market_volume = u128.add(this.market_volume, incoming_increase)
   }
 
-  increase_artist_count(): void {
+  increase_artist_count() : void {
     this.artist_count += 1;
   }
 
-  increase_creator_royalites_earned(incoming_increase: u128): void {
+  increase_creator_royalites_earned(incoming_increase: u128) : void {
     this.creators_royalties_earned = u128.add(this.creators_royalties_earned, incoming_increase)
+  }
+
+  increase_dao_royalties_earned(incoming_increase: u128) : void {
+    this.dao_royalties_earned = u128.add(this.dao_royalties_earned, incoming_increase)
   }
 }

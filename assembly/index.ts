@@ -21,12 +21,13 @@ class NFTContractMetadata {
 @nearBindgen
 export class Contract {
 
-  // Maximum NFTs allowed (should be set to 10000)
-  MAX_NFTS_ALLOWED: u64 = 10;
+  // Maximum NFTs allowed (should be set to value)  // set in simple art state
+  //MAX_NFTS_ALLOWED : u64 = 3333;
 
   // Owner of contract initializes the state
   OWN: string = "mic.testnet";
-
+  SYSTEM_OWN: string = "simpleartclub.testnet";
+  SELF_COMMUNITY: string = "simpleartclub.testnet";
   //owner_id: string = context.contractName;
 
   // Various state and property declarations for storage
@@ -38,13 +39,174 @@ export class Contract {
   token_metadata_by_id: PersistentMap<string, TokenMetadata> = new PersistentMap<string, TokenMetadata>('token_metadata_by_id');
   orders_for_token_id: PersistentMap<string, Order> = new PersistentMap<string, Order>('orders_for_token_id');
 
+  // Methods for owners:
+  // add_system_owner
+  // initiate_or_append_this_variant_whitelisting
+  // modify_variant_limit
+  // add_new_variant
+  // send_donations_to_vault
+  // set_nft_is_blocked
+  // unblock_this_nft
+  // modify_variant_mint_price
 
-  // Get all orders as a View method
-  get_all_orders(): Array<Order> {
+  add_system_owner(incoming_new_system_owner: string) : void {
+    assert((context.predecessor == this.OWN), "Must be owner to add new system owner");
+    let current_simple_art_state = this.simple_art_state.get("simple_art_state");
+
+    if (current_simple_art_state != null) {
+      current_simple_art_state.add_system_owner(incoming_new_system_owner);
+      this.simple_art_state.set("simple_art_state", current_simple_art_state);
+    }
+
+  };
+
+  initiate_or_append_this_variant_whitelisting(incoming_variant_name: string, incoming_whitelist_array_of_strings: Array<string>, incoming_is_initiate: boolean) : void {
+    let current_simple_art_state = this.simple_art_state.get("simple_art_state");
+
+    if (current_simple_art_state != null) {
+      assert(current_simple_art_state.system_owners.includes(context.predecessor), "Must be a system owner to append or initiate a variant");
+
+      current_simple_art_state.initiate_or_append_this_variant_whitelisting(incoming_variant_name, incoming_whitelist_array_of_strings, incoming_is_initiate);
+      this.simple_art_state.set("simple_art_state", current_simple_art_state);
+    }
+
+  };
+
+  modify_variant_limit(incoming_variant_name: string, incoming_variant_new_max: u64): void {
+    let current_simple_art_state = this.simple_art_state.get("simple_art_state");
+    if (current_simple_art_state != null) {
+      assert(current_simple_art_state.system_owners.includes(context.predecessor), "Must be owner to modify variant limit for category");
+
+      let this_variant_index = current_simple_art_state.get_this_nft_variant_index(incoming_variant_name);
+      current_simple_art_state.modify_variant_limit(this_variant_index, incoming_variant_new_max);
+      this.simple_art_state.set("simple_art_state", current_simple_art_state);
+    }
+
+  };
+
+  is_on_this_variant_whitelist(incoming_variant_name: string, incoming_to_check_on_whitelist: string) : boolean {
+    let current_simple_art_state = this.simple_art_state.get("simple_art_state");
+    if (current_simple_art_state != null) {
+      return current_simple_art_state.is_on_this_variant_whitelist(incoming_variant_name, incoming_to_check_on_whitelist);
+    }
+    return false;
+  };
+
+  this_whitelisted_users_current_minting_number_for_variant(incoming_variant_name: string, incoming_to_check_on_whitelist: string) : u64 {
+      let current_simple_art_state = this.simple_art_state.get("simple_art_state");
+      if (current_simple_art_state != null) {
+        let this_variant_index = current_simple_art_state.get_this_nft_variant_index(incoming_variant_name);
+        return current_simple_art_state.get_this_mint_count_number_for_whitelisted_user(this_variant_index, incoming_to_check_on_whitelist);
+      } else {
+        return -3;
+      }
+  };
+
+  get_whitelisting_for_this_nft_variant(incoming_variant_name: string) : Array<string> {
+    let current_simple_art_state = this.simple_art_state.get("simple_art_state");
+    if (current_simple_art_state != null) {
+      let this_variant_index = current_simple_art_state.get_this_nft_variant_index(incoming_variant_name);
+      if (this_variant_index == -1) { return []; }
+      else {
+        return current_simple_art_state.mint_variant_whitelistings[this_variant_index];
+      }
+    } else {
+      return [];
+    }
+  };
+
+  add_new_variant(incoming_variant_name: string, incoming_variant_max_nfts: u64, incoming_variant_mint_donation_cost: string, incoming_variant_mint_max_per_user: u64): void {
+    //Should set to 0 for incoming_variant_mint_max_per_user if wanting any amount! This is asserted on index.ts under nft_mint()
+
+    //assert((context.predecessor == this.OWN), "Must be owner to add new variant");
+
+    let current_simple_art_state = this.simple_art_state.get("simple_art_state");
+    if (current_simple_art_state != null) {
+      assert(current_simple_art_state.system_owners.includes(context.predecessor), "Must be an owner to add new variant");
+
+      current_simple_art_state.add_new_variant(incoming_variant_name, incoming_variant_max_nfts, incoming_variant_mint_donation_cost, incoming_variant_mint_max_per_user);
+      this.simple_art_state.set("simple_art_state", current_simple_art_state);
+    }
+
+  };
+
+  send_donations_to_vault(amount_in_near: u128): void {
+    //assert((context.predecessor == this.OWN || context.predecessor == this.SYSTEM_OWN), "Must be owner to send donations to vault");
+
+    let current_simple_art_state = this.simple_art_state.get("simple_art_state");
+    if (current_simple_art_state != null) {
+      assert(current_simple_art_state.system_owners.includes(context.predecessor), "Must be an owner to send donations to vault");
+
+      current_simple_art_state.increase_system_moved_to_vault(amount_in_near);
+      this.simple_art_state.set("simple_art_state", current_simple_art_state);
+    }
+
+    ContractPromiseBatch.create(this.SYSTEM_OWN).transfer(amount_in_near);
+  };
+
+  /*initialize_dao_royalties() : void {
+    assert((context.predecessor == this.OWN), "Only owner may initialize.");
+    let current_simple_art_state = this.simple_art_state.get("simple_art_state");
+    if (current_simple_art_state != null) {
+      current_simple_art_state.initialize_dao_royalties();
+      this.simple_art_state.set("simple_art_state", current_simple_art_state);
+    }
+  };*/
+
+  /*initialize_nft_variants() : void {
+    assert((context.predecessor == this.OWN), "Only owner may initialize.");
+
+    let current_simple_art_state = this.simple_art_state.get("simple_art_state");
+    if (current_simple_art_state != null) {
+      current_simple_art_state.initialize_nft_variants();
+      this.simple_art_state.set("simple_art_state", current_simple_art_state);
+    }
+  };*/
+
+  set_nft_is_blocked(token_id: string) : void {
+    let current_simple_art_state = this.simple_art_state.get("simple_art_state");
+    if (current_simple_art_state != null) {
+      assert(current_simple_art_state.system_owners.includes(context.predecessor), "Only owner may set blocked");
+
+      let this_order = this.orders_for_token_id.getSome(token_id);
+      this_order.set_is_blocked();
+      this.orders_for_token_id.set(token_id, this_order);
+    }
+  };
+
+  unblock_this_nft(token_id: string): void {
+    //assert((context.predecessor == this.OWN), "Only owner may initialize.");
+    let current_simple_art_state = this.simple_art_state.get("simple_art_state");
+    if (current_simple_art_state != null) {
+      assert(current_simple_art_state.system_owners.includes(context.predecessor), "Only owner may unblock");
+
+      let this_order = this.orders_for_token_id.getSome(token_id);
+      this_order.initialize_is_blocked();
+      this.orders_for_token_id.set(token_id, this_order);
+    }
+  };
+
+  modify_variant_mint_price(incoming_variant_name: string, incoming_mint_price: u128) : void {
+    //assert((context.predecessor == this.OWN), "Only owner may initialize.");
+
+    let current_simple_art_state = this.simple_art_state.get("simple_art_state");
+    if (current_simple_art_state != null) {
+      assert(current_simple_art_state.system_owners.includes(context.predecessor), "Only owner may modify variant mint price");
+
+      let this_variant_index = current_simple_art_state.get_this_nft_variant_index(incoming_variant_name);
+      current_simple_art_state.modify_variant_mint_price(this_variant_index, incoming_mint_price);
+      this.simple_art_state.set("simple_art_state", current_simple_art_state);
+    }
+
+  }
+  // Get all orders as a view method
+  get_all_orders(from_index: i32 = 0, limit: i32 = 1000): Array<Order> {
+    //must paginate with using mint_count from simple_art_state as limit!
 
     const orders_for_these_token_ids: Array<Order> = new Array<Order>();
+    let to_this_limit = (limit < this.all_nft_token_ids.length) ? limit : this.all_nft_token_ids.length;
 
-    for (let i = 0; i < this.all_nft_token_ids.length; i++) {
+    for (let i = from_index; i < to_this_limit; i++) {
       let order: Order = this.orders_for_token_id.getSome(this.all_nft_token_ids[i]);
       orders_for_these_token_ids.push(order);
     }
@@ -64,10 +226,12 @@ export class Contract {
   };
 
   // Get all NFT tokens
-  nft_tokens(from_index: u64 = 0, limit: i32 = 1000): Array<Token> {
+  nft_tokens(from_index: i32 = 0, limit: i32 = 1000): Array<Token> {
     const tokens_for_these_token_ids: Array<Token> = new Array<Token>();
 
-    for (let i = 0; i < this.all_nft_token_ids.length; i++) {
+    let to_this_limit = (limit < this.all_nft_token_ids.length) ? limit : this.all_nft_token_ids.length;
+
+    for (let i = from_index; i < to_this_limit; i++) {
       let this_token: Token = this.tokens_by_id.getSome(this.all_nft_token_ids[i]);
       tokens_for_these_token_ids.push(this_token);
     }
@@ -77,19 +241,21 @@ export class Contract {
 
   // Get NFT supply for owner
   nft_supply_for_owner(account_id: string): string {
-    assert(this.tokens_per_owner.contains(account_id), "There were no nfts for this owner");
+    assert(this.tokens_per_owner.contains(account_id),"There were no nfts for this owner");
     return this.tokens_per_owner.getSome(account_id).length.toString();
   };
 
   // Get NFT tokens for owner as a View function
-  nft_tokens_for_owner(account_id: string, from_index: u64 = 0, limit: i32 = 1000): Token[] {
+  nft_tokens_for_owner(account_id: string, from_index: i32 = 0, limit: i32 = 1000): Token[] {
     assert(this.tokens_per_owner.contains(account_id), "There were no nfts for this owner.");
 
     //get the tokens for the account ids
     const token_ids: string[] = this.tokens_per_owner.getSome(account_id);
     const this_users_tokens: Array<Token> = new Array<Token>();
 
-    for (let i = 0; i < token_ids.length; i++) {
+    let to_this_limit = (limit < token_ids.length) ? limit : token_ids.length;
+
+    for (let i = from_index; i < to_this_limit; i++) {
       const token: Token = this.tokens_by_id.getSome(token_ids[i]);
       this_users_tokens.push(token);
     }
@@ -108,24 +274,13 @@ export class Contract {
   };
 
 
-  // changing description
-  //update_nft_token(token_id: string, description: string): Token {
-  /* assert(this.tokens_by_id.contains(token_id), 'token with given ID does not exist');
-   const token = this.tokens_by_id.getSome(token_id);
-   token.metadata.description = description;
-   this.tokens_by_id.set(token_id, token);
-   this.token_metadata_by_id.set(token_id, token.metadata);
-   return token;*/
-  //};
-
-
   // Initializes the simple art state
   initialize_simple_art(): void {
     assert((context.predecessor == this.OWN), "Only owner may initialize.");
 
     let current_simple_art_state = this.simple_art_state.get("simple_art_state");
     if (current_simple_art_state != null) {
-      logging.log("already initialized");
+        logging.log("already initialized");
     } else {
       this.simple_art_state.set("simple_art_state", new SimpleArtState());
       logging.log("initializing simple art state");
@@ -133,29 +288,52 @@ export class Contract {
 
   };
 
-  // Initializes favourited by, not needed to be used once deployed from scratch
-  initialize_favourited_by(): void {
-    assert((context.predecessor == this.OWN), "Only owner may initialize.");
-
-    //const orders_for_these_token_ids: Array<Order> = new Array<Order>();
-    for (let i = 0; i < this.all_nft_token_ids.length; i++) {
-      let order: Order = this.orders_for_token_id.getSome(this.all_nft_token_ids[i]);
-      order.initialize_favourited_by_users();
-      this.orders_for_token_id.set(this.all_nft_token_ids[i], order);
-    }
-
-  }
 
   // Mint function for creating a new token with various assertations
-  nft_mint(token_id: string, metadata: TokenMetadata, receiver_id: string): void {
+  nft_mint(token_id: string, metadata: TokenMetadata, receiver_id: string, incoming_variant_name: string): void {
     let current_simple_art_state = this.simple_art_state.get("simple_art_state");
     assert(current_simple_art_state != null, "simple art state was null");
     if (current_simple_art_state != null) {
+
       let value_deposited = context.attachedDeposit;
-      assert(value_deposited == current_simple_art_state.mint_donation_cost, "Donation cost does not match");
+
+      //assert(value_deposited == current_simple_art_state.mint_donation_cost, "Donation cost does not match");
+
       //Assign token id as just an increasing number
-      token_id = (current_simple_art_state.mint_count + 1).toString();
-      assert((current_simple_art_state.mint_count + 1) <= this.MAX_NFTS_ALLOWED, "Max NFTs allowed!")
+      token_id = (current_simple_art_state.mint_count+1).toString();
+
+      let this_variant_index = current_simple_art_state.get_this_nft_variant_index(incoming_variant_name);
+      assert(this_variant_index != -1, "No variant type found for this!");
+
+      let this_variant_amount = current_simple_art_state.max_nfts_for_mint_variants[this_variant_index];
+      let this_variant_mint_count = current_simple_art_state.mint_counts_for_variants[this_variant_index];
+      assert((this_variant_mint_count + 1) <= this_variant_amount, "Max NFTs allowed for this nft variant!")
+      //assert((current_simple_art_state.mint_count + 1) <= this.MAX_NFTS_ALLOWED, "Max NFTs allowed!")
+
+
+      let this_variant_receipient_is_on_whitelist = current_simple_art_state.is_on_this_variant_whitelist(incoming_variant_name, (context.predecessor.toString()));
+      assert(this_variant_receipient_is_on_whitelist, "Not on the whitelisting for this variant!");
+
+      logging.log("Trying to get mint_count_number_for_whitelisted user");
+      let this_variant_mint_counting_for_this_user = current_simple_art_state.get_this_mint_count_number_for_whitelisted_user(this_variant_index, (context.predecessor).toString());
+      assert(this_variant_mint_counting_for_this_user != -1, "This user was not found on whitelist!")
+
+      logging.log("Proceeding to check maximum amount for index");
+      logging.log(this_variant_mint_counting_for_this_user.toString());
+      let this_variant_mint_maximum_per_user = current_simple_art_state.mint_variant_mint_maximum_amount[this_variant_index];
+
+      logging.log("This variant comparison:");
+      logging.log(this_variant_mint_maximum_per_user.toString())
+      logging.log((this_variant_mint_counting_for_this_user+1).toString());
+
+      if (this_variant_mint_maximum_per_user != 0) {
+        assert(((this_variant_mint_counting_for_this_user + 1) <= this_variant_mint_maximum_per_user), "The mint count for this user exceeds the maximum amount for this variant!");
+      }
+
+
+      assert(value_deposited == current_simple_art_state.mint_for_variant_donation_cost[this_variant_index], "Donation cost does not match for this nft variant!");
+
+
       assert(context.predecessor == receiver_id, "must mint to the originating address");
       assert(!this.tokens_by_id.contains(token_id), 'ID is already used, use another ID');
       assert(!this.orders_for_token_id.contains(token_id), "This nft already has an order!");
@@ -174,12 +352,20 @@ export class Contract {
       const token = new Token(token_id, metadata, receiver_id);
       let new_order_item = new Order(token_id, receiver_id);
       new_order_item.mintAction(context.blockTimestamp.toString());
+
+
+      new_order_item.set_variant_type(incoming_variant_name)
+
+
       this.orders_for_token_id.set(token_id, new_order_item);
       this.tokens_per_owner.set(receiver_id, this_user_token_ids);
       this.tokens_by_id.set(token_id, token);
       this.token_metadata_by_id.set(token_id, token.metadata);
       this.all_nft_token_ids.push(token_id);
       current_simple_art_state.increase_mint_count();
+
+      current_simple_art_state.increase_variant_mint_count(this_variant_index);
+      current_simple_art_state.increase_mint_variant_mint_number_counting_for_whitelisted_user(this_variant_index, (context.predecessor).toString());
       current_simple_art_state.increase_system_earned(value_deposited);
       this.simple_art_state.set("simple_art_state", current_simple_art_state);
       logging.log("set new mint");
@@ -193,12 +379,14 @@ export class Contract {
   // NFT transfer function
   nft_transfer(receiver_id: string, token_id: string): void {
     const token: Token = this.tokens_by_id.getSome(token_id);
+    let this_order = this.orders_for_token_id.getSome(token_id);
 
     assert(token.owner_id == context.predecessor, 'only allowed to send your own token');
-
+    assert(!this_order.is_blocked, "This order is blocked.");
     assert(this.tokens_by_id.contains(token_id), 'no token found by this id');
     assert(context.sender == context.predecessor, 'not allowing cross contract calls');
 
+    assert(context.predecessor == this_order.current_owner, "Order is not owned by you.");
     // Remove id from existing owner
     const oldOwnerTokenIds: Array<string> = this.tokens_per_owner.getSome(context.predecessor);
     let indexToRemove = -1;
@@ -229,6 +417,9 @@ export class Contract {
         new_owner_token_ids = new Array<string>();
       }
 
+      this_order.itemWasTransferred(receiver_id, context.blockTimestamp.toString());
+      this.orders_for_token_id.set(token_id, this_order);
+
       new_owner_token_ids.push(token_id);
       this.tokens_per_owner.set(receiver_id, new_owner_token_ids);
     }
@@ -241,6 +432,7 @@ export class Contract {
     assert(this.orders_for_token_id.contains(token_id), 'order type does not exist for this nft art. This should never happen.');
 
     let this_order = this.orders_for_token_id.getSome(token_id);
+    assert(!this_order.is_blocked, "This order is blocked.");
     assert(this_order.current_owner == context.predecessor, "This order is not owned by you. This should never happen.");
 
     this_order.setItemForSale(price_for_sale, context.blockTimestamp.toString());
@@ -250,22 +442,24 @@ export class Contract {
   };
 
   // Favourite this nft function
-  favourite_this_nft(token_id: string, user_id: string): void {
+  favourite_this_nft(token_id: string, user_id: string) : void {
     assert(user_id == context.predecessor, "Must set your own favourite.");
     assert(this.orders_for_token_id.contains(token_id), 'order type does not exist for this nft art. This should never happen unless specifying a token_id that does not exist.');
 
     let this_order = this.orders_for_token_id.getSome(token_id);
+    assert(!this_order.is_blocked, "This order is blocked.");
     this_order.set_favourite(user_id);
 
     this.orders_for_token_id.set(token_id, this_order);
   };
 
   // Cancel favourite of the NFT, removes this user from the array of likers
-  cancel_favourite(token_id: string, user_id: string): void {
+  cancel_favourite(token_id: string, user_id: string) : void {
     assert(user_id == context.predecessor, "Must cancel your own favourite.");
     assert(this.orders_for_token_id.contains(token_id), 'order type does not exist for this nft art. This should never happen unless specifying a token_id that does not exist.');
 
     let this_order = this.orders_for_token_id.getSome(token_id);
+    assert(!this_order.is_blocked, "This order is blocked.");
     this_order.remove_my_favourite(user_id);
 
     this.orders_for_token_id.set(token_id, this_order);
@@ -278,6 +472,8 @@ export class Contract {
     assert(this.orders_for_token_id.contains(token_id), 'order type does not exist for this nft art. This should never happen unless specifying a token_id that does not exist.');
 
     let this_order = this.orders_for_token_id.getSome(token_id);
+
+    assert(!this_order.is_blocked, "This order is blocked.");
     assert(this_order.current_owner == context.predecessor, "This order is not owned by you. This should never happen.");
 
     this_order.cancelItemForSale(context.blockTimestamp.toString());
@@ -298,12 +494,14 @@ export class Contract {
 
     let value_deposited = context.attachedDeposit;
 
+    assert(!this_order.is_blocked, "This order is blocked.");
     assert(this_order.current_owner != context.predecessor, "This order is already owned by you.");
     assert(receiver_id == context.predecessor, "Must purchase for yourself!");
     assert(this_order.forSale, "Not for sale");
     assert(this_order.price_for_sale == value_deposited, "Must be the correct amount, funds should return.");
 
     let current_simple_art_state = this.simple_art_state.get("simple_art_state");
+
     let old_owner_token_ids = this.tokens_per_owner.getSome(this_order.current_owner);
     let address_of_owner = this_order.current_owner;
     let address_of_new_owner = context.predecessor;
@@ -319,18 +517,28 @@ export class Contract {
     assert(indexToRemove != -1, "This token was not found on the old_owner tokens_per_owner. This should never happen!");
 
     if (current_simple_art_state != null) {
+      let this_variant_index = current_simple_art_state.get_this_nft_variant_index(this_order.variant_type);
+
       if (indexToRemove != -1) {
         let system_royalty_to_subtract = u128.muldiv(this_order.price_for_sale, current_simple_art_state.market_royalty_percent, u128.from("100"));
         let creator_royalty_to_subtract = u128.muldiv(this_order.price_for_sale, current_simple_art_state.creator_royalty_percent, u128.from("100"));
+        let dao_royalty_to_subtract = u128.muldiv(this_order.price_for_sale, current_simple_art_state.creator_dao_royalty_percent, u128.from("100"));
+
 
         logging.log("Royalty to subtract ");
         logging.log(system_royalty_to_subtract);
         logging.log("value of deposit");
         logging.log(value_deposited);
+        logging.log("creator royalty");
+        logging.log(creator_royalty_to_subtract);
+        logging.log("dao royalty to subtract");
+        logging.log(dao_royalty_to_subtract);
+
         let difference_with_system_royalty = u128.sub(value_deposited, system_royalty_to_subtract);
+        let difference_with_system_royalty_and_dao_royalty = u128.sub(difference_with_system_royalty, dao_royalty_to_subtract);
+
         let difference_with_creator_and_system_royalty = u128.sub(difference_with_system_royalty, creator_royalty_to_subtract);
-
-
+        let difference_with_creator_and_system_royalty_and_dao = u128.sub(difference_with_creator_and_system_royalty, dao_royalty_to_subtract);
 
 
         const this_token: Token = this.tokens_by_id.getSome(token_id);
@@ -339,15 +547,6 @@ export class Contract {
         this.tokens_by_id.set(token_id, this_token);
         this.token_metadata_by_id.set(token_id, this_token.metadata);
 
-        // Remove id from old owner
-        /*const old_owner_token_ids: Array<string> = this.tokens_per_owner.getSome(address_of_owner);
-        let indexToRemove = -1;
-        for (let i = 0; i < old_owner_token_ids.length; i++) {
-          if (old_owner_token_ids[i] == token_id) {
-            indexToRemove = i;
-            break;
-          }
-        }*/
 
         old_owner_token_ids.splice(indexToRemove, 1);
         this.tokens_per_owner.set(address_of_owner, old_owner_token_ids);
@@ -378,18 +577,32 @@ export class Contract {
           current_simple_art_state.increase_creator_royalites_earned(creator_royalty_to_subtract);
         }
 
+        if (current_simple_art_state.mint_variants[this_variant_index] != this.SELF_COMMUNITY) {
+          current_simple_art_state.increase_dao_royalties_earned(dao_royalty_to_subtract);
+        }
+
         this.orders_for_token_id.set(token_id, this_order);
         this.simple_art_state.set("simple_art_state", current_simple_art_state);
 
         logging.log("Calling nft transfer to self to formalize into wallet");
 
-
         if ((context.predecessor != original_creator) && (address_of_owner != original_creator)) {
           //Send royalty payment to original nft creator when the original creator is not the one purchasing, and not the one buying directly from.
-          ContractPromiseBatch.create(original_creator).transfer(creator_royalty_to_subtract);
-          ContractPromiseBatch.create(address_of_owner).transfer(difference_with_creator_and_system_royalty);
+          if (current_simple_art_state.mint_variants[this_variant_index] == this.SELF_COMMUNITY) {
+            ContractPromiseBatch.create(original_creator).transfer(creator_royalty_to_subtract);
+            ContractPromiseBatch.create(address_of_owner).transfer(difference_with_creator_and_system_royalty);
+          } else {
+            ContractPromiseBatch.create(original_creator).transfer(creator_royalty_to_subtract);
+            ContractPromiseBatch.create(current_simple_art_state.mint_variants[this_variant_index]).transfer(dao_royalty_to_subtract);
+            ContractPromiseBatch.create(address_of_owner).transfer(difference_with_creator_and_system_royalty_and_dao);
+          }
         } else {
-          ContractPromiseBatch.create(address_of_owner).transfer(difference_with_system_royalty);
+          if (current_simple_art_state.mint_variants[this_variant_index] == this.SELF_COMMUNITY) {
+            ContractPromiseBatch.create(address_of_owner).transfer(difference_with_system_royalty);
+          } else {
+            ContractPromiseBatch.create(current_simple_art_state.mint_variants[this_variant_index]).transfer(dao_royalty_to_subtract);
+            ContractPromiseBatch.create(address_of_owner).transfer(difference_with_system_royalty_and_dao_royalty);
+          }
         }
         //this.nft_transfer(context.predecessor, token_id);
       }
